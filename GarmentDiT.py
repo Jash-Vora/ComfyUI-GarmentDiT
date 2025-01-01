@@ -20,7 +20,7 @@ class GarmentEnhancementNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "clip_embeddings": ("CLIP",),  # CLIP embeddings
+                "clip_embeddings": ("CLIP_VISION_OUTPUT",),  # CLIP embeddings
             },
         }
 
