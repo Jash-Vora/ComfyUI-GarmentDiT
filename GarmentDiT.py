@@ -1,9 +1,8 @@
 import torch
-from comfy.model_base import BaseNode
 from .src.transformer_sd3_garm import SD3Transformer2DModel
 import safetensors.torch
 
-class GarmentEnhancementNode(BaseNode):
+class GarmentEnhancementNode:
     """
     A custom node for garment enhancement using a pre-trained DiT model.
     """
