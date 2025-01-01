@@ -1,0 +1,14 @@
+[project]
+name = "garmentdit"
+description = "[a/FitDiT](https://arxiv.org/abs/2411.10499): Advancing the Authentic Garment Details for High-fidelity Virtual Try-onon"
+version = "1.0.0"
+license = {file = "LICENSE"}
+
+[project.urls]
+Repository = "https://github.com/Jash-Vora/ComfyUI-GarmentDiT"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI-GarmentDiT"
+Icon = ""
