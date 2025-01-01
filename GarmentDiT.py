@@ -28,21 +28,22 @@ class GarmentEnhancementNode:
     FUNCTION = "enhance_garment"
     CATEGORY = "Custom/Garment Enhancement"
 
-    def enhance_garment(self, latent_image, clip_embeddings):
+    def enhance_garment(self, clip_embeddings):
         """
-        Enhance the input latent image using the transformer model and CLIP embeddings.
+        Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
+        No latent_image_tensor is used since the CLIP embeddings directly guide the enhancement.
         """
-        latent_image_tensor = latent_image["samples"]  # Extract latent tensor
-        clip_tensor = clip_embeddings["embedding"]  # Extract CLIP embeddings
+        # Extract CLIP embeddings (this contains the visual feature information)
+        clip_tensor = clip_embeddings["embedding"]
 
-        # Run the transformer model
+        # The transformer should directly use CLIP embeddings for enhancement
         with torch.no_grad():
-            enhanced_latent = self.transformer(latent_image_tensor, encoder_hidden_states=clip_tensor).sample
+            enhanced_latent = self.transformer(clip_tensor).sample  # Use clip_tensor directly
 
-        # Return enhanced latent in the expected format
+        # Return the enhanced latent representation (without needing to manually generate latent_image_tensor)
         return ({
             "samples": enhanced_latent,
-            "shape": latent_image["shape"]
+            "shape": enhanced_latent.shape  # Shape of the enhanced latent
         },)
 
 
