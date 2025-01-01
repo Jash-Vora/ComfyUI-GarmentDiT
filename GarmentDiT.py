@@ -1,57 +1,58 @@
 import torch
-from safetensors.torch import load_file
-from comfy.model_base import CustomNode, comfy_model
-from .src.transformer_sd3_garm import SD3Transformer2DModel  # Replace with the correct import for your model class
+from comfy.model_base import BaseNode
+from .src.transformer_sd3_garm import SD3Transformer2DModel
+import safetensors.torch
 
-class TransformerEnhancementNode(CustomNode):
+class GarmentEnhancementNode(BaseNode):
+    """
+    A custom node for garment enhancement using a pre-trained DiT model.
+    """
+
+    def __init__(self):
+        super().__init__()
+        # Load the transformer model
+        model_path = "/kaggle/working/ComfyUI/models/DiT/diffusion_pytorch_model.safetensors"
+        self.transformer = SD3Transformer2DModel.from_pretrained(
+            model_path, torch_dtype=torch.float16, local_files_only=True
+        )
+        self.transformer.eval()
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "latent_input": ("LATENT",),  # Input from the VAE encoder
-                "clip_context": ("CLIP",),   # Input from the CLIP node
-                "timestep": ("INT",),        # Optional: timestep for the transformer
-            }
+                "latent_image": ("LATENT",),  # Latent image from VAE encoder
+                "clip_embeddings": ("CLIP",),  # CLIP embeddings
+            },
         }
 
-    @classmethod
-    def OUTPUT_TYPES(cls):
-        return {
-            "enhanced_latent": ("LATENT",)
-        }
+    RETURN_TYPES = ("LATENT",)  # Outputs enhanced latent for decoding
+    FUNCTION = "enhance_garment"
+    CATEGORY = "Custom/Garment Enhancement"
 
-    def __init__(self):
-        super().__init__()
-        # Define the path to the .safetensors file
-        transformer_model_path = "/kaggle/working/ComfyUI/models/DiT/diffusion_pytorch_model.safetensors"
-        print(f"Loading transformer model from: {transformer_model_path}")
-        
-        # Load the model weights
-        state_dict = load_file(transformer_model_path)  # Load safetensors state dict
-        self.transformer = SD3Transformer2DModel()  # Replace with your actual model class
-        self.transformer.load_state_dict(state_dict)  # Load weights
-        self.transformer.eval()  # Set the model to evaluation mode
+    def enhance_garment(self, latent_image, clip_embeddings):
+        """
+        Enhance the input latent image using the transformer model and CLIP embeddings.
+        """
+        latent_image_tensor = latent_image["samples"]  # Extract latent tensor
+        clip_tensor = clip_embeddings["embedding"]  # Extract CLIP embeddings
 
-    def forward(self, latent_input, clip_context, timestep=None):
-        # Ensure timestep is a tensor
-        if timestep is None:
-            timestep = torch.tensor(1, dtype=torch.long)  # Default timestep if not provided
-
-        # Forward pass through the transformer
+        # Run the transformer model
         with torch.no_grad():
-            enhanced_latent = self.transformer(
-                hidden_states=latent_input,
-                encoder_hidden_states=clip_context,
-                timestep=timestep,
-            ).sample
+            enhanced_latent = self.transformer(latent_image_tensor, encoder_hidden_states=clip_tensor).sample
 
-        return {"enhanced_latent": enhanced_latent}
+        # Return enhanced latent in the expected format
+        return ({
+            "samples": enhanced_latent,
+            "shape": latent_image["shape"]
+        },)
 
 
-# Register the node in ComfyUI
-comfy_model.register_node(
-    "TransformerEnhancementNode",
-    TransformerEnhancementNode,
-    inputs=TransformerEnhancementNode.INPUT_TYPES(),
-    outputs=TransformerEnhancementNode.OUTPUT_TYPES(),
-)
+# Node registration
+NODE_CLASS_MAPPINGS = {
+    "GarmentEnhancementNode": GarmentEnhancementNode
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "GarmentEnhancementNode": "Garment Enhancement"
+}
