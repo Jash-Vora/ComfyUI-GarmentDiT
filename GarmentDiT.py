@@ -20,7 +20,6 @@ class GarmentEnhancementNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "latent_image": ("LATENT",),  # Latent image from VAE encoder
                 "clip_embeddings": ("CLIP",),  # CLIP embeddings
             },
         }
