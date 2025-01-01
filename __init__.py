@@ -1,1 +1,1 @@
-from .GarmentDiT import TransformerEnhancementNode
+from .GarmentDiT import GarmentEnhancementNode
