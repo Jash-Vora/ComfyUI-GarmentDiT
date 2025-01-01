@@ -37,6 +37,8 @@ class GarmentEnhancementNode:
         # Extract CLIP embeddings (this contains the visual feature information)
         clip_tensor = clip_embeddings.image_embeds
 
+        clip_tensor = clip_tensor.to(torch.float16)
+
         # The transformer should directly use CLIP embeddings for enhancement
         with torch.no_grad():
             enhanced_latent = self.transformer(clip_tensor).sample  # Use clip_tensor directly
