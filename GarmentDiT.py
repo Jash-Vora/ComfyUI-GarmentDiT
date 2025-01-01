@@ -35,7 +35,7 @@ class GarmentEnhancementNode:
         """
         print(dir(clip_embeddings))  # To inspect the structure
         # Extract CLIP embeddings (this contains the visual feature information)
-        clip_tensor = clip_embeddings.image_embeds
+        clip_tensor = clip_embeddings.last_hidden_state
 
         clip_tensor = clip_tensor.to(torch.float16)
 
