@@ -33,6 +33,7 @@ class GarmentEnhancementNode:
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
         No latent_image_tensor is used since the CLIP embeddings directly guide the enhancement.
         """
+        print(clip_embeddings)  # To inspect the structure
         # Extract CLIP embeddings (this contains the visual feature information)
         clip_tensor = clip_embeddings["embedding"]
 
