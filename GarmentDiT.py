@@ -23,7 +23,7 @@ class TransformerEnhancementNode(CustomNode):
     def __init__(self):
         super().__init__()
         # Define the path to the .safetensors file
-        transformer_model_path = "/kaggle/working/ComfyUI/models/DiT/diffusion_model_pytorch.safetensors"
+        transformer_model_path = "/kaggle/working/ComfyUI/models/DiT/diffusion_pytorch_model.safetensors"
         print(f"Loading transformer model from: {transformer_model_path}")
         
         # Load the model weights
