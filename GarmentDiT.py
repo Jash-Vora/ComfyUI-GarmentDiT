@@ -10,7 +10,7 @@ class GarmentEnhancementNode:
     def __init__(self):
         super().__init__()
         # Load the transformer model
-        model_path = "/kaggle/working/ComfyUI/models/DiT/diffusion_pytorch_model.safetensors"
+        model_path = "/kaggle/working/ComfyUI/models/DiT/"
         self.transformer = SD3Transformer2DModel.from_pretrained(
             model_path, torch_dtype=torch.float16, local_files_only=True
         )
