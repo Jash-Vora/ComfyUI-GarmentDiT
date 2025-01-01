@@ -35,7 +35,7 @@ class GarmentEnhancementNode:
         """
         print(dir(clip_embeddings))  # To inspect the structure
         # Extract CLIP embeddings (this contains the visual feature information)
-        clip_tensor = clip_embeddings["embedding"]
+        clip_tensor = clip_embeddings.image_embeds
 
         # The transformer should directly use CLIP embeddings for enhancement
         with torch.no_grad():
