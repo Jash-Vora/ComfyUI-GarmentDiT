@@ -10,7 +10,7 @@ class GarmentEnhancementNode:
     def __init__(self):
         super().__init__()
         # Load the transformer model
-        model_path = "/kaggle/working/ComfyUI/models/DiT/"
+        model_path = "/kaggle/working/ComfyUI/models/DiT"
         self.transformer = SD3Transformer2DModel.from_pretrained(
             model_path, torch_dtype=torch.float16, local_files_only=True
         )
@@ -20,22 +20,26 @@ class GarmentEnhancementNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "clip_embeddings": ("CLIP_VISION_OUTPUT",),  # CLIP embeddings
+                "clip_embeddings": ("CLIP_VISION_OUTPUT",),
+                "clip_embeddings": ("CLIP_VISION_OUTPUT",)  
             },
         }
 
     RETURN_TYPES = ("LATENT",)  # Outputs enhanced latent for decoding
+    RETURN_NAMES = ("latent",)
     FUNCTION = "enhance_garment"
     CATEGORY = "Custom/Garment Enhancement"
 
-    def enhance_garment(self, clip_embeddings):
+    def enhance_garment(self, clip_embedding1,clip_embedding2):
         """
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
         No latent_image_tensor is used since the CLIP embeddings directly guide the enhancement.
         """
-        print(dir(clip_embeddings))  # To inspect the structure
         # Extract CLIP embeddings (this contains the visual feature information)
-        clip_tensor = clip_embeddings.last_hidden_state
+        clip_tensor1 = clip_embedding1.last_hidden_state
+        clip_tensor2 = clip_embedding2.last_hidden_state
+
+        clip_tensor = torch.concat(clip_tensor1,clip_tensor2)
 
         clip_tensor = clip_tensor.to(torch.float16)
 
@@ -48,7 +52,6 @@ class GarmentEnhancementNode:
             "samples": enhanced_latent,
             "shape": enhanced_latent.shape  # Shape of the enhanced latent
         },)
-
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
