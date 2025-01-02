@@ -57,27 +57,27 @@ class GarmentEnhancementNode:
             (0, max_dim2 - clip_tensor2.size(2), 0, max_dim1 - clip_tensor2.size(1))
         )
 
-        # Debugging: Print shapes after padding
-        print(f"clip_tensor1 shape after padding: {clip_tensor1.shape}")
-        print(f"clip_tensor2 shape after padding: {clip_tensor2.shape}")
+        batch_size = clip_tensor.shape[0]
+        in_channels = 16  # From config
+        patch_size = 2    # From config
+        sample_size = 128  # From config
+        height, width = sample_size // patch_size, sample_size // patch_size
 
-        # Concatenate the tensors
-        clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=2)
+        # Reshape to (batch_size, in_channels, height, width)
+        clip_tensor = clip_tensor.view(batch_size, in_channels, height, width)
 
-        # Add timestep information (expand and concatenate to match dimensions)
-        timestep_tensor = torch.tensor([timestep], dtype=torch.float16).to(clip_tensor.device)
-        timestep_tensor = timestep_tensor.view(1, 1, 1).expand(clip_tensor.size(0), clip_tensor.size(1), 1)
-        clip_tensor = torch.cat((clip_tensor, timestep_tensor), dim=2)
-
-        # The transformer should directly use CLIP embeddings for enhancement
+        # Pass through transformer model
         with torch.no_grad():
-            enhanced_latent = self.transformer(clip_tensor).sample  # Use clip_tensor directly
+            output = self.transformer(
+                hidden_states=clip_tensor,
+                timestep=torch.tensor([timestep], dtype=torch.long),
+                pooled_projections=pooled_projections,
+                return_dict=True,
+            )
 
-        # Return the enhanced latent representation (without needing to manually generate latent_image_tensor)
-        return ({
-            "samples": enhanced_latent,
-            "shape": enhanced_latent.shape  # Shape of the enhanced latent
-        },)
+        # Return the enhanced latent representation
+        return (output.sample,)
+
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
