@@ -22,6 +22,7 @@ class GarmentEnhancementNode:
                 "clip_embedding1": ("CLIP_VISION_OUTPUT",),
                 "clip_embedding2": ("CLIP_VISION_OUTPUT",),
                 "timestep": ("INT",),
+                "pooled_projections": ("TENSOR",),  # Add pooled_projections here
             },
         }
 
@@ -30,7 +31,7 @@ class GarmentEnhancementNode:
     FUNCTION = "enhance_garment"
     CATEGORY = "Custom/Garment Enhancement"
 
-    def enhance_garment(self, clip_embedding1, clip_embedding2, timestep):
+    def enhance_garment(self, clip_embedding1, clip_embedding2, timestep, pooled_projections):
         """
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
         """
@@ -55,23 +56,32 @@ class GarmentEnhancementNode:
             (0, max_dim2 - clip_tensor2.size(2), 0, max_dim1 - clip_tensor2.size(1))
         )
 
-        # Concatenate the two clip tensors along the channel dimension (dim=-1)
+        # Concatenate the two clip tensors along the last dimension
         clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=-1)
 
-        # Reshape to (batch_size, in_channels, height, width)
-        batch_size = clip_tensor.shape[0]
-        in_channels = 16  # From config
-        patch_size = 2    # From config
-        sample_size = 128  # From config
-        height, width = sample_size // patch_size, sample_size // patch_size
+        # Debugging: Print concatenated tensor shape
+        print(f"Concatenated clip_tensor shape: {clip_tensor.shape}")
 
-        clip_tensor = clip_tensor.view(batch_size, in_channels, height, width)
+        # Calculate number of elements that need to be reshaped into [batch_size, 16, height, width]
+        total_elements = clip_tensor.numel()
+        required_elements = 16  # number of channels (16, from config)
+
+        # Calculate height and width dynamically to match the total number of elements
+        height_width = total_elements // required_elements  # Total elements divided by 16 channels
+        height = width = int(height_width ** 0.5)  # Assuming square input tensor (height == width)
+
+        if height * width * 16 != total_elements:
+            raise ValueError("Calculated height and width do not match total number of elements.")
+
+        # Reshape to (batch_size, 16, height, width)
+        clip_tensor = clip_tensor.view(clip_tensor.shape[0], 16, height, width)
 
         # Pass through transformer model
         with torch.no_grad():
             output = self.transformer(
                 hidden_states=clip_tensor,
                 timestep=torch.tensor([timestep], dtype=torch.long),
+                pooled_projections=pooled_projections,  # Pass pooled_projections as well
                 return_dict=True,
             )
 
