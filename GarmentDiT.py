@@ -62,12 +62,12 @@ class GarmentEnhancementNode:
         print(f"clip_tensor2 shape after padding: {clip_tensor2.shape}")
 
         # Concatenate the tensors
-        clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=1)
+        clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=2)
 
-        # Add timestep information (expand and concatenate if needed)
+        # Add timestep information (expand and concatenate to match dimensions)
         timestep_tensor = torch.tensor([timestep], dtype=torch.float16).to(clip_tensor.device)
-        timestep_tensor = timestep_tensor.unsqueeze(0).expand(clip_tensor.size(0), -1)  # Expand to batch size
-        clip_tensor = torch.cat((clip_tensor, timestep_tensor), dim=1)
+        timestep_tensor = timestep_tensor.view(1, 1, 1).expand(clip_tensor.size(0), clip_tensor.size(1), 1)
+        clip_tensor = torch.cat((clip_tensor, timestep_tensor), dim=2)
 
         # The transformer should directly use CLIP embeddings for enhancement
         with torch.no_grad():
