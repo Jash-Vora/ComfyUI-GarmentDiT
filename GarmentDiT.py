@@ -40,6 +40,14 @@ class GarmentEnhancementNode:
         clip_tensor1 = clip_embedding1.last_hidden_state.to(torch.float16)
         clip_tensor2 = clip_embedding2.last_hidden_state.to(torch.float16)
 
+        # Align dimensions dynamically
+        if clip_tensor1.size(1) < clip_tensor2.size(1):
+            padding = clip_tensor2.size(1) - clip_tensor1.size(1)
+            clip_tensor1 = torch.nn.functional.pad(clip_tensor1, (0, 0, 0, padding))
+        elif clip_tensor1.size(1) > clip_tensor2.size(1):
+            padding = clip_tensor1.size(1) - clip_tensor2.size(1)
+            clip_tensor2 = torch.nn.functional.pad(clip_tensor2, (0, 0, 0, padding))
+
         # Concatenate the tensors
         clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=1)
 
