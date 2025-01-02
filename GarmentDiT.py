@@ -22,7 +22,6 @@ class GarmentEnhancementNode:
                 "clip_embedding1": ("CLIP_VISION_OUTPUT",),
                 "clip_embedding2": ("CLIP_VISION_OUTPUT",),
                 "timestep": ("INT",),
-                "pooled_projections": ("TENSOR",),  # Add pooled_projections here
             },
         }
 
@@ -31,7 +30,7 @@ class GarmentEnhancementNode:
     FUNCTION = "enhance_garment"
     CATEGORY = "Custom/Garment Enhancement"
 
-    def enhance_garment(self, clip_embedding1, clip_embedding2, timestep, pooled_projections):
+    def enhance_garment(self, clip_embedding1, clip_embedding2, timestep):
         """
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
         """
@@ -81,7 +80,6 @@ class GarmentEnhancementNode:
             output = self.transformer(
                 hidden_states=clip_tensor,
                 timestep=torch.tensor([timestep], dtype=torch.long),
-                pooled_projections=pooled_projections,  # Pass pooled_projections as well
                 return_dict=True,
             )
 
