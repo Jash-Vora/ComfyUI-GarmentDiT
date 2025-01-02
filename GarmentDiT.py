@@ -61,15 +61,20 @@ class GarmentEnhancementNode:
         # Debugging: Print concatenated tensor shape
         print(f"Concatenated clip_tensor shape: {clip_tensor.shape}")
 
-        # Calculate number of elements that need to be reshaped into [batch_size, 16, height, width]
+        # Calculate total number of elements
         total_elements = clip_tensor.numel()
         required_elements = 16  # number of channels (16, from config)
 
-        # Calculate height and width dynamically to match the total number of elements
-        height_width = total_elements // required_elements  # Total elements divided by 16 channels
-        height = width = int(height_width ** 0.5)  # Assuming square input tensor (height == width)
+        # Ensure that the total number of elements is divisible by 16
+        if total_elements % required_elements != 0:
+            raise ValueError(f"Total number of elements ({total_elements}) is not divisible by {required_elements}.")
 
-        if height * width * 16 != total_elements:
+        # Calculate height and width dynamically (find factors of total elements divided by 16)
+        height_width = total_elements // required_elements  # Total elements divided by 16
+        factors = self.get_factors(height_width)  # Find factors of height_width
+        height, width = factors[0], factors[1]  # Pick the first factor pair
+
+        if height * width != height_width:
             raise ValueError("Calculated height and width do not match total number of elements.")
 
         # Reshape to (batch_size, 16, height, width)
@@ -85,6 +90,13 @@ class GarmentEnhancementNode:
 
         # Return the enhanced latent representation
         return (output.sample,)
+
+    def get_factors(self, n):
+        """Returns the factors of n as a tuple (height, width)."""
+        for i in range(1, int(n**0.5) + 1):
+            if n % i == 0:
+                return (i, n // i)
+        return (1, n)
 
 
 # Node registration
