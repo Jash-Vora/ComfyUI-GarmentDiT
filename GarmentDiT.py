@@ -1,6 +1,5 @@
 import torch
 from .src.transformer_sd3_garm import SD3Transformer2DModel
-import safetensors.torch
 
 class GarmentEnhancementNode:
     """
@@ -34,7 +33,6 @@ class GarmentEnhancementNode:
     def enhance_garment(self, clip_embedding1, clip_embedding2, timestep):
         """
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
-        No latent_image_tensor is used since the CLIP embeddings directly guide the enhancement.
         """
         # Extract CLIP embeddings (this contains the visual feature information)
         clip_tensor1 = clip_embedding1.last_hidden_state.to(torch.float16)
@@ -57,13 +55,16 @@ class GarmentEnhancementNode:
             (0, max_dim2 - clip_tensor2.size(2), 0, max_dim1 - clip_tensor2.size(1))
         )
 
+        # Concatenate the two clip tensors along the channel dimension (dim=-1)
+        clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=-1)
+
+        # Reshape to (batch_size, in_channels, height, width)
         batch_size = clip_tensor.shape[0]
         in_channels = 16  # From config
         patch_size = 2    # From config
         sample_size = 128  # From config
         height, width = sample_size // patch_size, sample_size // patch_size
 
-        # Reshape to (batch_size, in_channels, height, width)
         clip_tensor = clip_tensor.view(batch_size, in_channels, height, width)
 
         # Pass through transformer model
@@ -71,7 +72,6 @@ class GarmentEnhancementNode:
             output = self.transformer(
                 hidden_states=clip_tensor,
                 timestep=torch.tensor([timestep], dtype=torch.long),
-                pooled_projections=pooled_projections,
                 return_dict=True,
             )
 
