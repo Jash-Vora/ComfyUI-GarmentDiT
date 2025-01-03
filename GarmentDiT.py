@@ -17,8 +17,8 @@ class GarmentEnhancementNode:
         )
         self.transformer.eval()
 
-        # Define a linear layer to align dimensions if necessary
-        self.feature_projector = nn.Linear(1280, 768).to(torch.float16)  # Assuming 1280 is the larger dimension
+        self.feature_projector1 = nn.Linear(1280, 2048).to(torch.float16)  # Projecting to 2048 dimensions for the first pooled projection
+        self.feature_projector2 = nn.Linear(768, 2048).to(torch.float16)   # Projecting to 2048 dimensions for the second pooled projection
 
     @classmethod
     def INPUT_TYPES(cls) -> dict:
@@ -50,12 +50,8 @@ class GarmentEnhancementNode:
             pooled_projections1 = clip_embedding1.image_embeds.to(torch.float16)
             pooled_projections2 = clip_embedding2.image_embeds.to(torch.float16)
 
-            # Align dimensions of pooled projections
-            if pooled_projections1.shape[1] > pooled_projections2.shape[1]:
-                pooled_projections1 = self.feature_projector(pooled_projections1)
-            elif pooled_projections2.shape[1] > pooled_projections1.shape[1]:
-                pooled_projections2 = self.feature_projector(pooled_projections2)
-
+            pooled_projections1 = self.feature_projector1(pooled_projections1)
+            pooled_projections2 = self.feature_projector2(pooled_projections2)
             # Combine or average pooled projections
             pooled_projections = (pooled_projections1 + pooled_projections2) / 2
 
