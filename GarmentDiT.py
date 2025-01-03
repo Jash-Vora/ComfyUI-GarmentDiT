@@ -39,14 +39,20 @@ class GarmentEnhancementNode:
         """
         try:
             # Extract CLIP embeddings
-            print(dir(clip_embedding1))
-            print(dir(clip_embedding2))
             clip_tensor1 = clip_embedding1.last_hidden_state.to(torch.float16)
             clip_tensor2 = clip_embedding2.last_hidden_state.to(torch.float16)
+
+            # Compute pooled_projections using image_embeds
+            pooled_projections1 = clip_embedding1.image_embeds.to(torch.float16)
+            pooled_projections2 = clip_embedding2.image_embeds.to(torch.float16)
+
+            # Combine or average pooled projections
+            pooled_projections = (pooled_projections1 + pooled_projections2) / 2
 
             # Debugging: Log tensor shapes
             print(f"clip_tensor1 shape: {clip_tensor1.shape}")
             print(f"clip_tensor2 shape: {clip_tensor2.shape}")
+            print(f"pooled_projections shape: {pooled_projections.shape}")
 
             # Align dimensions if necessary
             max_dim1 = max(clip_tensor1.size(1), clip_tensor2.size(1))
@@ -95,7 +101,8 @@ class GarmentEnhancementNode:
             with torch.no_grad():
                 output = self.transformer(
                     hidden_states=clip_tensor,
-                    timestep=torch.tensor([timestep], dtype=torch.long),
+                    timestep=torch.tensor([timestep], dtype=torch.long, device=clip_tensor.device),
+                    pooled_projections=pooled_projections,
                     return_dict=True,
                 )
 
