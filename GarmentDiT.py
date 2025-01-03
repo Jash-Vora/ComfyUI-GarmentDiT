@@ -93,7 +93,7 @@ class GarmentEnhancementNode:
                 )
 
             spatial_elements = total_elements // required_channels
-            height, width = self.find_closest_factors(spatial_elements, target_aspect_ratio=clip_tensor.size(2) / clip_tensor.size(1))
+            height, width = self.find_closest_factors(spatial_elements)
 
             if height * width != spatial_elements:
                 raise ValueError(
@@ -122,24 +122,14 @@ class GarmentEnhancementNode:
             raise RuntimeError(f"Error in garment enhancement: {e}")
 
     @staticmethod
-    def find_closest_factors(n: int, target_aspect_ratio: float = 1.0) -> tuple:
+    def find_closest_factors(n):
         """
         Finds the closest pair of factors for n and returns them as (height, width).
-        Optionally, you can specify a target aspect ratio (width/height) for the factors.
         """
-        closest_height, closest_width = 1, n  # Default fallback for prime numbers
-        min_aspect_diff = abs(closest_width / closest_height - target_aspect_ratio)
-        
-        for i in range(1, int(n**0.5) + 1):
+        for i in range(int(n**0.5), 0, -1):
             if n % i == 0:
-                height, width = i, n // i
-                # Calculate aspect ratio difference
-                aspect_diff = abs(width / height - target_aspect_ratio)
-                if aspect_diff < min_aspect_diff:
-                    closest_height, closest_width = height, width
-                    min_aspect_diff = aspect_diff
-    
-        return closest_height, closest_width
+                return i, n // i
+        return 1, n  # Fallback for prime numbers
 
 
 # Node registration
