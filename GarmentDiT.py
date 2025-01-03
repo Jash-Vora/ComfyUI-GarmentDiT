@@ -12,13 +12,16 @@ class GarmentEnhancementNode:
         super().__init__()
         # Load the transformer model
         model_path = "/kaggle/working/ComfyUI/models/DiT"
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Use GPU if available, else fallback to CPU
+
         self.transformer = SD3Transformer2DModel.from_pretrained(
             model_path, torch_dtype=torch.float16, local_files_only=True
-        )
+        ).to(self.device)  # Move model to the appropriate device
         self.transformer.eval()
 
-        self.feature_projector1 = nn.Linear(1280, 2048).to(torch.float16)  # Projecting to 2048 dimensions for the first pooled projection
-        self.feature_projector2 = nn.Linear(768, 2048).to(torch.float16)   # Projecting to 2048 dimensions for the second pooled projection
+        # Define projection layers for pooled projections to 2048 dimensions
+        self.feature_projector1 = nn.Linear(1280, 2048).to(self.device)  # First projector
+        self.feature_projector2 = nn.Linear(768, 2048).to(self.device)   # Second projector
 
     @classmethod
     def INPUT_TYPES(cls) -> dict:
@@ -42,17 +45,19 @@ class GarmentEnhancementNode:
         Enhance the latent space or latent encoding using the transformer model and CLIP embeddings.
         """
         try:
-            # Extract CLIP embeddings
-            clip_tensor1 = clip_embedding1.last_hidden_state.to(torch.float16)
-            clip_tensor2 = clip_embedding2.last_hidden_state.to(torch.float16)
+            # Ensure the embeddings are moved to the correct device (GPU/CPU)
+            clip_tensor1 = clip_embedding1.last_hidden_state.to(self.device, dtype=torch.float16)
+            clip_tensor2 = clip_embedding2.last_hidden_state.to(self.device, dtype=torch.float16)
 
-            # Compute pooled_projections using image_embeds
-            pooled_projections1 = clip_embedding1.image_embeds.to(torch.float16)
-            pooled_projections2 = clip_embedding2.image_embeds.to(torch.float16)
+            # Compute pooled projections using image_embeds and move them to the device
+            pooled_projections1 = clip_embedding1.image_embeds.to(self.device, dtype=torch.float16)
+            pooled_projections2 = clip_embedding2.image_embeds.to(self.device, dtype=torch.float16)
 
+            # Project pooled projections to 2048 dimensions
             pooled_projections1 = self.feature_projector1(pooled_projections1)
             pooled_projections2 = self.feature_projector2(pooled_projections2)
-            # Combine or average pooled projections
+            
+            # Combine pooled projections (averaging)
             pooled_projections = (pooled_projections1 + pooled_projections2) / 2
 
             # Debugging: Log tensor shapes
@@ -60,20 +65,12 @@ class GarmentEnhancementNode:
             print(f"clip_tensor2 shape: {clip_tensor2.shape}")
             print(f"pooled_projections shape: {pooled_projections.shape}")
 
-            # Align dimensions if necessary
+            # Align dimensions of clip_tensor1 and clip_tensor2
             max_dim1 = max(clip_tensor1.size(1), clip_tensor2.size(1))
             max_dim2 = max(clip_tensor1.size(2), clip_tensor2.size(2))
 
-            if clip_tensor1.size(1) < max_dim1 or clip_tensor1.size(2) < max_dim2:
-                clip_tensor1 = torch.nn.functional.pad(
-                    clip_tensor1,
-                    (0, max_dim2 - clip_tensor1.size(2), 0, max_dim1 - clip_tensor1.size(1)),
-                )
-            if clip_tensor2.size(1) < max_dim1 or clip_tensor2.size(2) < max_dim2:
-                clip_tensor2 = torch.nn.functional.pad(
-                    clip_tensor2,
-                    (0, max_dim2 - clip_tensor2.size(2), 0, max_dim1 - clip_tensor2.size(1)),
-                )
+            clip_tensor1 = self.pad_tensor(clip_tensor1, max_dim1, max_dim2)
+            clip_tensor2 = self.pad_tensor(clip_tensor2, max_dim1, max_dim2)
 
             # Concatenate tensors along the last dimension
             clip_tensor = torch.cat((clip_tensor1, clip_tensor2), dim=-1)
@@ -107,7 +104,7 @@ class GarmentEnhancementNode:
             with torch.no_grad():
                 output = self.transformer(
                     hidden_states=clip_tensor,
-                    timestep=torch.tensor([timestep], dtype=torch.long, device=clip_tensor.device),
+                    timestep=torch.tensor([timestep], dtype=torch.long, device=self.device),
                     pooled_projections=pooled_projections,
                     return_dict=True,
                 )
@@ -117,6 +114,15 @@ class GarmentEnhancementNode:
 
         except Exception as e:
             raise RuntimeError(f"Error in garment enhancement: {e}")
+
+    def pad_tensor(self, tensor: torch.Tensor, max_dim1: int, max_dim2: int) -> torch.Tensor:
+        """
+        Pad tensor to the target dimensions (max_dim1, max_dim2).
+        """
+        return torch.nn.functional.pad(
+            tensor,
+            (0, max_dim2 - tensor.size(2), 0, max_dim1 - tensor.size(1)),
+        )
 
     @staticmethod
     def find_closest_factors(n: int) -> tuple:
