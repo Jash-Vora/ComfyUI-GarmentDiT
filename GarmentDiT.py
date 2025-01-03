@@ -93,7 +93,7 @@ class GarmentEnhancementNode:
                 )
 
             spatial_elements = total_elements // required_channels
-            height, width = self.find_closest_factors(spatial_elements, target_aspect_ratio=clip_tensor.size(2) / clip_tensor.size(3))
+            height, width = self.find_closest_factors(spatial_elements, target_aspect_ratio=clip_tensor.size(2) / clip_tensor.size(1))
 
             if height * width != spatial_elements:
                 raise ValueError(
