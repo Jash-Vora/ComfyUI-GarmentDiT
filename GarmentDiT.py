@@ -31,8 +31,8 @@ class GarmentEnhancementNode:
             },
         }
 
-    RETURN_TYPES = ("LATENT",)  # Outputs enhanced latent for decoding
-    RETURN_NAMES = ("latent",)
+    RETURN_TYPES = ("IMAGE",)  # Outputs enhanced latent for decoding
+    RETURN_NAMES = ("image",)
     FUNCTION = "enhance_garment"
     CATEGORY = "Custom/Garment Enhancement"
 
