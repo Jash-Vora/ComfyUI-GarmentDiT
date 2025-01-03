@@ -115,10 +115,8 @@ class GarmentEnhancementNode:
                 )
 
             print(output.sample.shape)
-
-            latent_tensor = output.sample.view(1, -1)
-            # Return the enhanced latent representation
-            return (latent_tensor,)
+            
+            return (output.sample,)
 
         except Exception as e:
             raise RuntimeError(f"Error in garment enhancement: {e}")
