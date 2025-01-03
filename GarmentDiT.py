@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 from .src.transformer_sd3_garm import SD3Transformer2DModel
 
 
@@ -15,6 +16,9 @@ class GarmentEnhancementNode:
             model_path, torch_dtype=torch.float16, local_files_only=True
         )
         self.transformer.eval()
+
+        # Define a linear layer to align dimensions if necessary
+        self.feature_projector = nn.Linear(1280, 768).to(torch.float16)  # Assuming 1280 is the larger dimension
 
     @classmethod
     def INPUT_TYPES(cls) -> dict:
@@ -45,6 +49,12 @@ class GarmentEnhancementNode:
             # Compute pooled_projections using image_embeds
             pooled_projections1 = clip_embedding1.image_embeds.to(torch.float16)
             pooled_projections2 = clip_embedding2.image_embeds.to(torch.float16)
+
+            # Align dimensions of pooled projections
+            if pooled_projections1.shape[1] > pooled_projections2.shape[1]:
+                pooled_projections1 = self.feature_projector(pooled_projections1)
+            elif pooled_projections2.shape[1] > pooled_projections1.shape[1]:
+                pooled_projections2 = self.feature_projector(pooled_projections2)
 
             # Combine or average pooled projections
             pooled_projections = (pooled_projections1 + pooled_projections2) / 2
