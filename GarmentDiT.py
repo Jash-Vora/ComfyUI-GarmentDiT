@@ -114,6 +114,7 @@ class GarmentEnhancementNode:
                     return_dict=True,
                 )
 
+            print(output.shape)
             # Return the enhanced latent representation
             return (output.sample,)
 
