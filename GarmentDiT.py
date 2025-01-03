@@ -39,6 +39,8 @@ class GarmentEnhancementNode:
         """
         try:
             # Extract CLIP embeddings
+            print(dir(clip_embedding1))
+            print(dir(clip_embedding2))
             clip_tensor1 = clip_embedding1.last_hidden_state.to(torch.float16)
             clip_tensor2 = clip_embedding2.last_hidden_state.to(torch.float16)
 
